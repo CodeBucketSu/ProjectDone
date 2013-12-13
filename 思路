@@ -1,0 +1,9 @@
+思路
+1，向表中添加ancester
+2，addRecord：根据ancester逐条添加，建一棵树
+3，树的根为root，model中要有一个root
+4，每次用index返回树中的一个节点
+
+
+
+正在实现getChildrenbyId
