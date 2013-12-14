@@ -161,13 +161,14 @@ class TodoItemModel(QAbstractItemModel):
 
         if role == Qt.EditRole:
             if column == WHAT:
-                item.what = value.toString()
+                item.what = str(value.toString())
             elif column == WHEN:
                 item.when = value.toInt()
         item.parent.updateOrderKeys()
         self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"),
                       index, index)
-        #self.SqlHlp.updateTodoItem(*item.dataToUpdate())
+        datas = item.dataToUpdate()
+        self.SqlHlp.updateTodoItem(*datas)
         #self.reset()
         return True
 
