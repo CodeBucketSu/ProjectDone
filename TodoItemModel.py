@@ -67,8 +67,8 @@ class TodoItemModel(QAbstractItemModel):
                 if not ancst:
                     # The path of ancesters does not exist!
                     self.root.addChild(todoItem) # Add the item to root
-                    todoItem.fatherID = root.ID
-                    todoItem.ancesters = str(root.ID)
+                    todoItem.fatherID = self.root.ID
+                    todoItem.ancesters = str(self.root.ID)
                     todoItem.parent = self.root
                     self.SqlHlp.updateTodoItem(todoItem.ID, \
                                 t_father_id=todoItem.fatherID,\
@@ -157,7 +157,6 @@ class TodoItemModel(QAbstractItemModel):
             str(index.column()), str(item.what), str(item.finish)
 
         if role == Qt.CheckStateRole and column == WHAT:
-            print value.toInt()
             item.finish = value.toInt()[0]
 
         if role == Qt.EditRole:
@@ -165,10 +164,11 @@ class TodoItemModel(QAbstractItemModel):
                 item.what = value.toString()
             elif column == WHEN:
                 item.when = value.toInt()
-        item.parent.sortChildren()
+        item.parent.updateOrderKeys()
         self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"),
                       index, index)
         #self.SqlHlp.updateTodoItem(*item.dataToUpdate())
+        #self.reset()
         return True
 
 

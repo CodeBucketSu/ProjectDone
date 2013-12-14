@@ -136,8 +136,14 @@ class TodoItem():
 	def sortChildren(self):
 		if not self.children:
 			return 
-		old = self.chldren
+		old = self.children
 		self.children = []
 		for child in old:
 			self.addChild(child[1])
+
+	def updateOrderKeys(self):
+		if not self.children:
+			return
+		for i, child in enumerate(self.children):
+			self.children[i] = (child[1].childOrderKey(), child[1])
 
