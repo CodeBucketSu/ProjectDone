@@ -10,7 +10,7 @@ from SqlHelper import *
 
 #ID, FINISH, WHAT, WHEN, NOTES, WHERE, REMINDTIME, CONTEXT, \
 #    FATHERID, ANCESTERS = range(10)
-WHAT, WHEN, FINISH = range(3)
+WHAT, WHEN = range(2)
 
 
 class TodoItemModel(QAbstractItemModel):
@@ -19,7 +19,7 @@ class TodoItemModel(QAbstractItemModel):
         super(TodoItemModel, self).__init__()
         self.root = TodoItem(0, 0, 'root', 0, '', '', 0, '', 0, '')
         self.root.parent = None
-        self.headers = ['Task', 'Time', 'Finish']
+        self.headers = ['Task', 'Time']
         self.context = set()
         self.whereTodo = set()
         self.SqlHlp = SqliteHelper()
@@ -33,6 +33,10 @@ class TodoItemModel(QAbstractItemModel):
     	'''
     	if not index.isValid():
     		return (Qt.ItemIsEnabled | Qt.ItemIsDropEnabled)
+        if index.column() == WHAT:
+            return (QAbstractItemModel.flags(self, index)
+                |Qt.ItemIsEditable|Qt.ItemIsDragEnabled
+                |Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable)
     	return (QAbstractItemModel.flags(self, index) 
     		| Qt.ItemIsEditable | Qt.ItemIsDragEnabled \
     		| Qt.ItemIsDropEnabled )
@@ -53,7 +57,7 @@ class TodoItemModel(QAbstractItemModel):
         '''
         root = self.root
         ancesters = todoItem.getAncestersList()
-        print ancesters
+        #print ancesters
         if ancesters == [0]:
             self.root.addChild(todoItem)
             todoItem.parent = self.root
@@ -113,14 +117,14 @@ class TodoItemModel(QAbstractItemModel):
             return QVariant()
         column = index.column()
         if role == Qt.DisplayRole:
-            if column == FINISH:
-                return QVariant(item.finish)
             if column == WHAT:
                 return QVariant(item.what)
             if column == WHEN:
                 timeFomat = '%Y-%m-%d %H-%m'
                 sTime = time.strftime(timeFomat, time.gmtime(item.when))
                 return QVariant(sTime)
+        if role == Qt.CheckStateRole and column == WHAT:
+            return item.finish
         return QVariant()
 
 
@@ -142,10 +146,34 @@ class TodoItemModel(QAbstractItemModel):
     def columnCount(self, index=QModelIndex()):
         ''' The columns to show are: FINISH, WHAT, WHEN. '''
         return len(self.headers)
+
+    def setData(self, index, value, role=Qt.EditRole):
+        ''' setData '''
+        item = self.nodeFromIndex(index)
+        if not item:
+            return False
+        column = index.column()
+        print 'setData:', str(role), str(index.row()), \
+            str(index.column()), str(item.what), str(item.finish)
+
+        if role == Qt.CheckStateRole and column == WHAT:
+            print value.toInt()
+            item.finish = value.toInt()[0]
+
+        if role == Qt.EditRole:
+            if column == WHAT:
+                item.what = value.toString()
+            elif column == WHEN:
+                item.when = value.toInt()
+        item.parent.sortChildren()
+        self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"),
+                      index, index)
+        #self.SqlHlp.updateTodoItem(*item.dataToUpdate())
+        return True
+
+
+
 '''
-    #def setData(self, index, value, role=Qt.EditRole):
-
-
     #def save(self):
 
     #def sortByName(self):

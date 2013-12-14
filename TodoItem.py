@@ -120,3 +120,24 @@ class TodoItem():
 				return item[ITEM]
 		return None
 
+
+	def setCheckState(self, value):
+		if value:
+			self.finish = 1
+		else:
+			self.finish = 0
+
+
+	def dataToUpdate(self):
+		return (self.ID, self.finish, self.what, self.when, \
+			self.notes, self.where, self.remindTime, self.context, \
+			self.fatherID, self.ancesters)
+
+	def sortChildren(self):
+		if not self.children:
+			return 
+		old = self.chldren
+		self.children = []
+		for child in old:
+			self.addChild(child[1])
+

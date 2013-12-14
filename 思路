@@ -6,4 +6,29 @@
 
 
 
-正在实现getChildrenbyId
+正在实现getChildrenbyId————addTodoItem
+
+1，readonly --> editable --> drag & drop
+2, readonly: 
+
+checkbox 解决方案：http://blog.csdn.net/vah101/article/details/6190809
+http://stackoverflow.com/questions/8175122/qtreeview-checkboxes
+
+关于是否完成的几点思考：
+1，列出来的子任务不代表全部子任务，所以，所有子任务完成不代表父任务完成
+2，可能有的子任务的缺失不影响父任务的完成，所以，父任务完成也不代表所有子任务都完成
+3，综上，每一个条目的checkState是相互独立的，不会相互影响
+4，所以，如果后续要实现只显示已完成，则需要多次操作数据库（微不足道的数据量，没有资格关心效率）
+
+
+setdata:
+1,查valid
+2，editrole：view在user该数据后传来的，适合编辑的数据
+3，查真的变了
+4，改数据
+5，发信号
+
+遇到bug！发现一旦改了一个节点的finish属性，其子节点将无法正常工作！！
+发现！按现有的做法，childOrderKey应该是不会改变的！否则在rowOfChild中将无法用新的key在parent中用原来的旧key找到该child！
+然而，又想保持现有的排序依据，因此，只能在每次setData之后对parent重新进行排序
+搞定！
