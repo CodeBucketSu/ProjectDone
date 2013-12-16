@@ -32,3 +32,16 @@ setdata:
 发现！按现有的做法，childOrderKey应该是不会改变的！否则在rowOfChild中将无法用新的key在parent中用原来的旧key找到该child！
 然而，又想保持现有的排序依据，因此，只能在每次setData之后对parent重新进行排序
 搞定！
+
+
+还需处理：focuse  current 相关
+
+新建item时 遇到问题：要生成新item插入树中，需要id，但是向database中插入新数据却不传入ID，而由数据库自己生成
+解决：为了不和数据库自动生成，每次要生成新的item的时候，先想数据库插入，再获取最新的item的id，生成新的item，插入树中
+
+insertRows:
+现在的理解，其机制应该是这样的，调用beginInsertRows（self, QModelIndex parent, int first, int last），其最后参数告诉了其他组件哪些行是新插入的，其他组件就知道要修改哪些显示了~
+所以实际插入的行必须和beginInserRows函数中的参数相符，而不必和insertRows函数的参数相符？？？
+实践证明，确实是这样
+
+在实现removeRows的过程中，发现在parent方法中返回的QModelIndex实际上是指向root的index，而不是空index！！！！！！

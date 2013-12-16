@@ -11,7 +11,8 @@ from SqlHelper import *
 #ID, FINISH, WHAT, WHEN, NOTES, WHERE, REMINDTIME, CONTEXT, \
 #    FATHERID, ANCESTERS = range(10)
 WHAT, WHEN = range(2)
-
+maxtime = 29999999999
+APPEND_NEW_ITEM, PREPEND_NEW_iTEM, ADD_AND_SORT_NEW_ITEM = range(3)
 
 class TodoItemModel(QAbstractItemModel):
 
@@ -47,10 +48,10 @@ class TodoItemModel(QAbstractItemModel):
         items.sort()
         for todoItem in items:
             #print todoItem
-            self.addTodoItem(todoItem)
+            self.addTodoItemToTree(todoItem)
             
 
-    def addTodoItem(self, todoItem):
+    def addTodoItemToTree(self, todoItem):
         '''
         Add a todo item into the datas in memor.
         Build a tree from the root node.
@@ -77,10 +78,6 @@ class TodoItemModel(QAbstractItemModel):
                     root = ancst
             root.addChild(todoItem)
             todoItem.parent = root
-
-
-
-    #def asRecord(self, index):
 
 
     def nodeFromIndex(self, index):
@@ -111,6 +108,7 @@ class TodoItemModel(QAbstractItemModel):
         assert row != -1
         return self.createIndex(row, 0, parent)
 
+
     def data(self, index, role=Qt.DisplayRole):
         item = self.nodeFromIndex(index)
         if not item:
@@ -136,6 +134,7 @@ class TodoItemModel(QAbstractItemModel):
             return QVariant(self.headers[section])
         return QVariant()
 
+
     def rowCount(self, index=QModelIndex()):
         item = self.nodeFromIndex(index)
         if item is None:
@@ -146,6 +145,7 @@ class TodoItemModel(QAbstractItemModel):
     def columnCount(self, index=QModelIndex()):
         ''' The columns to show are: FINISH, WHAT, WHEN. '''
         return len(self.headers)
+
 
     def setData(self, index, value, role=Qt.EditRole):
         ''' setData '''
@@ -164,7 +164,9 @@ class TodoItemModel(QAbstractItemModel):
                 item.what = str(value.toString())
             elif column == WHEN:
                 item.when = value.toInt()
-        item.parent.updateOrderKeys()
+
+        #item.parent.updateOrderKeys()
+        item.parent.sortChildren()
         self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"),
                       index, index)
         datas = item.dataToUpdate()
@@ -174,9 +176,50 @@ class TodoItemModel(QAbstractItemModel):
 
 
 
-'''
-    #def save(self):
 
+    def insertRows(self, position=APPEND_NEW_ITEM, count=1, 
+                    parent=QModelIndex()):
+        ''' Used to insert new rows into the tree and the database.
+        Insert count rows in the parent's positionth row.'''
+        parentItem = self.nodeFromIndex(parent)
+        if parentItem == None:
+            return False
+        fatherID = parentItem.ID
+        ancesters = parentItem.ancesters + str(fatherID)
+        if position == APPEND_NEW_ITEM:
+            startRow  = parentItem.lenOfChildren()
+            self.beginInsertRows(parent, startRow,
+                                 startRow + count - 1)
+            for row in range(count):
+                ID = self.SqlHlp.newTodoItem(t_father_id = fatherID, \
+                                            t_ancesters = ancesters)
+                item = TodoItem(ID)
+                item.parent = parentItem
+                parentItem.appendNewChild(item)
+                index = self.createIndex(startRow+row, 0, parentItem)
+            self.endInsertRows()
+        return True
+
+
+    def removeRows(self, startRow, count, parent = QModelIndex()):
+        ''' Used to remove specified rows.'''
+        parentItem = self.nodeFromIndex(parent)
+        print parentItem, parentItem == None
+        print startRow, count
+        print self.root.children
+        if parentItem == None:
+            return False
+        self.beginRemoveRows(parent, startRow, startRow + count - 1)
+        for row in range(count):
+            IDs = parentItem.deleteChild(startRow + row)
+            self.SqlHlp.deleteTodoItems(IDs)
+            print IDs, 'are deleted.'
+
+        self.endRemoveRows()
+        return True
+
+
+'''
     #def sortByName(self):
 
 '''

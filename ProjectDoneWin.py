@@ -22,9 +22,20 @@ class ProjectDoneWin(QMainWindow):
 		
 		# set the treeView
 		self.treeView = QTreeView()
-		model = TodoItemModel()
-		model.load()
-		self.treeView.setModel(model)
+		self.model = TodoItemModel()
+		self.model.load()
+		self.treeView.setModel(self.model)
+		self.treeView.setMinimumSize(500, 300)
+		widthOfWhen = self.treeView.sizeHintForColumn(WHEN)
+		currentWidth = self.treeView.width()
+		print widthOfWhen, currentWidth
+		self.treeView.setColumnWidth(WHAT, 450 - widthOfWhen)
+		widthOfWhen = self.treeView.sizeHintForColumn(WHEN)
+		currentWidth = self.treeView.width()
+		print widthOfWhen, currentWidth
+		self.connect(self.model, SIGNAL\
+				("dataChanged(QModelIndex,QModelIndex)"), \
+				self.resizeColumn)
 
 		# add the treeview to layout
 		self.hbox.addWidget(self.treeView)	
@@ -76,6 +87,14 @@ class ProjectDoneWin(QMainWindow):
 		itemToolBar.setObjectName("ItemToolBar")
 		self.addActions(itemToolBar, (newAction, addSubAction, \
 						checkAction, deleteAction, saveAction))
+		itemToolBar.setIconSize(QSize(66, 66))
+
+
+	def resizeColumn(self, index1, index2):
+		''' Anytime the model send the dataChanged signal, this 
+		method will be called. '''
+		column  = index1.column()
+		self.treeView.resizeColumnToContents(WHEN)
 
 
 	def createAction(self, text, slot, shortcut=None, 
@@ -106,26 +125,52 @@ class ProjectDoneWin(QMainWindow):
 				target.addSeparator()
 			else:
 		   		target.addAction(action)
-		   		
+
 
 	def newItem(self):
 		print 'newItem'
+		self.model.insertRows()
+		self.statusBar().showMessage('A todotem is created.')
 
 
 	def addSubItem(self):
 		print 'addSubItem'
+		index = self.treeView.currentIndex()
+		self.model.insertRows(APPEND_NEW_ITEM, 1, index)
+		self.statusBar().showMessage('A sub todoitem is created.')
+
+
 
 
 	def checkItem(self):
 		print 'checkItem'
+		self.statusBar().showMessage("Todoitem '%s' is checked.")
 
 
 	def deleteItem(self):
 		print 'deleteItem'
+		index = self.treeView.currentIndex()
+		if not index.isValid():
+			self.statusBar().showMessage("No item is chosed.")
+			return
+		parentIndex = self.model.parent(index)
+		row = index.row()
+		what = str(self.model.data(self.model\
+					.index(row, WHAT, parentIndex)) \
+					.toString())
+		if QMessageBox.question(self, "Todoitem Remove", 
+					QString("Rmove item '%1' and all of its sub items?")\
+					.arg(what), QMessageBox.Yes|QMessageBox.No) \
+					== QMessageBox.No:
+			return
+		if self.model.removeRows(row, 1, parentIndex):
+			self.statusBar().showMessage("Todoitem '%s' is deleted." \
+					% what)
 
 
 	def saveEdit(self):
 		print 'saveItem'
+		self.statusBar().showMessage('Changes are saved.')
 
 
 if __name__ == '__main__':

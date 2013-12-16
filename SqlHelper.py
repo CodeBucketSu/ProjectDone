@@ -60,7 +60,7 @@ initDBScript = '''
 		l_name text not null
 		);
 	'''
-seveTodoItemSql = '''
+newTodoItemSql = '''
 	insert into todo_table (
 		t_finish, 
 		t_what, 
@@ -98,6 +98,9 @@ isTableExistSql = '''
 deleteTodoItemSql = '''
 	delete from todo_table where t_id = ? ;
 	'''
+getNewestItemIDSql = '''
+	select t_id from todo_table order by t_id desc limit 3
+	'''
 
 class SqliteHelper(object):
 	'''Sqlite Helper.'''
@@ -117,15 +120,17 @@ class SqliteHelper(object):
 			print tables
 		connector.close()
 
-	def saveTodoItem(self, t_finish=0, t_what = 'What to do', \
+	def newTodoItem(self, t_finish=0, t_what = 'What to do', \
 					t_when=maxtime, t_notes = 'NULL', \
 					t_where='NULL', t_remindTime=0,\
 					t_context='NULL', t_father_id=0, \
 					t_ancesters = '0' , ):
-		self.cursor.execute(seveTodoItemSql, (t_finish, t_what,\
+		self.cursor.execute(newTodoItemSql, (t_finish, t_what,\
 					t_when, t_notes, t_where, t_remindTime, \
 					t_context, t_father_id, t_ancesters))
+		self.cursor.execute(getNewestItemIDSql)
 		self.connector.commit()
+		return self.cursor.fetchone()[0]
 
 	def getAllTodoItems(self):
 		self.cursor.execute(getAllTodoItemsSql)
@@ -148,20 +153,25 @@ class SqliteHelper(object):
 		self.cursor.execute(deleteTodoItemSql, (t_id, ))
 		self.connector.commit()
 
+	def deleteTodoItems(self, t_id_list):
+		for t_id in t_id_list:
+			self.deleteTodoItem(t_id)
+
 	def close(self):
 		self.connector.close()
 
 if __name__ == '__main__':
 	sqlh = SqliteHelper()
 	sqlh.initDatabase()
-	sqlh.saveTodoItem(0, 'aaa', t_father_id = 0)
-	sqlh.saveTodoItem(0, 'bbb', t_father_id = 1, t_ancesters = '1')
-	sqlh.saveTodoItem(0, 'ccc', t_father_id = 2, t_ancesters = '1_2')
-	sqlh.saveTodoItem(0, 'aaa', t_father_id = 0)
-	sqlh.saveTodoItem(0, 'bbb', t_father_id = 4, t_ancesters = '4')
-	sqlh.saveTodoItem(0, 'ccc', t_father_id = 5, t_ancesters = '4_5')
-	sqlh.saveTodoItem(0, 'ccc', t_father_id = 5, t_ancesters = '3_5')
-	for record in sqlh.getAllTodoItems():
-		print type(record), record
+	#sqlh.newTodoItem(0, 'aaa', t_father_id = 0)
+	#sqlh.newTodoItem(0, 'bbb', t_father_id = 1, t_ancesters = '1')
+	#sqlh.newTodoItem(0, 'ccc', t_father_id = 2, t_ancesters = '1_2')
+	#sqlh.newTodoItem(0, 'aaa', t_father_id = 0)
+	#sqlh.newTodoItem(0, 'bbb', t_father_id = 4, t_ancesters = '4')
+	#sqlh.newTodoItem(0, 'ccc', t_father_id = 5, t_ancesters = '4_5')
+	#sqlh.newTodoItem(0, 'ccc', t_father_id = 5, t_ancesters = '3_5')
+	print sqlh.newTodoItem()
+	#for record in sqlh.getAllTodoItems():
+	#	print type(record), record
 	sqlh.close()
 

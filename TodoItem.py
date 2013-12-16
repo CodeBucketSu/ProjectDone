@@ -5,6 +5,7 @@ import bisect
 import time
 
 KEY, ITEM = range(2)
+maxtime = 29999999999
 
 def cmp(a, b):
 	if a < b:
@@ -18,9 +19,11 @@ def cmp(a, b):
 
 
 class TodoItem():
-	def __init__(self, ID, finish, what, when, notes, \
-				where, remindTime, context, fatherID, \
-				ancesters):
+	def __init__(self, ID, finish=0, what = 'What to do',\
+				 when=maxtime, notes = 'NULL', \
+				 where='NULL', remindTime=0, \
+				 context='NULL', fatherID=0, \
+				 ancesters = '0'):
 		'''Initialzer of TodoItem class.'''
 		self.ID = ID
 		self.what = what
@@ -104,7 +107,16 @@ class TodoItem():
 		''' Only add a child to the current item.
 		Will not change the child.'''
 		if isinstance(child, TodoItem):
-			bisect.insort(self.children, (child.childOrderKey(), child))
+			row = bisect.bisect(self.children, \
+				(child.childOrderKey(), child))
+			bisect.insort(self.children, \
+				(child.childOrderKey(), child))
+			return row
+
+
+	def appendNewChild(self, child):
+		''' Used when add new todo item to the parent.'''
+		self.children.append((child.childOrderKey(), child))
 
 
 	def getAncestersList(self):
@@ -147,3 +159,24 @@ class TodoItem():
 		for i, child in enumerate(self.children):
 			self.children[i] = (child[1].childOrderKey(), child[1])
 
+
+	def deleteChild(self, row):
+		''' Called by model when deleting an item.'''
+		if 0 <= row < self.lenOfChildren():
+			IDlist = self.allIDsInSubTree(row)
+			print 'DELETE item: ', self.children.pop(row)
+			return IDlist
+
+
+	def allIDsInSubTree(self, row):
+		''' Return all the IDs of all the nodes in a subTree, 
+		whose root is the rowth	child of current item's children. '''
+		if 0 <= row <self.lenOfChildren():
+			IDlist = []
+			for i in range(self.children[row][ITEM].lenOfChildren()):
+				IDlist.extend(self.children[row][ITEM]\
+									.allIDsInSubTree(i))
+			IDlist.append(self.children[row][ITEM].ID)
+			return IDlist
+		else:
+			return []
